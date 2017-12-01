@@ -6,6 +6,15 @@ ENDIF()
 
 project(ctc_release)
 
+IF (NOT APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -O2 -lrt")
+ENDIF()
+
+IF (APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O2")
+    add_definitions(-DAPPLE)
+ENDIF()
+
 include_directories(include)
 
 FIND_PACKAGE(CUDA 6.5)
@@ -26,7 +35,7 @@ else(BUILD_SHARED)
     set(WARPCTC_SHARED "STATIC")
 endif(BUILD_SHARED)
 
-# Set c++ flags 
+# Set c++ flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 if(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -52,7 +61,11 @@ IF (CUDA_VERSION VERSION_GREATER "7.6")
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_62,code=sm_62")
 ENDIF()
 
-IF(NOT APPLE)
+IF (CUDA_VERSION VERSION_GREATER "8.0")
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_70,code=sm_70")
+ENDIF()
+
+if (NOT APPLE)
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --std=c++11")
     if(WITH_OMP)
         set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -fopenmp")
@@ -81,7 +94,7 @@ IF (WITH_GPU)
     MESSAGE(STATUS "Building shared library with GPU support")
 
     CUDA_ADD_LIBRARY(warpctc ${WARPCTC_SHARED} src/ctc_entrypoint.cu src/reduce.cu)
-    IF (!WITH_TORCH) 
+    IF (!WITH_TORCH)
         TARGET_LINK_LIBRARIES(warpctc ${CUDA_curand_LIBRARY})
     ENDIF()
 
@@ -169,5 +182,3 @@ ELSE()
     ENDIF()
 
 ENDIF()
-
-
